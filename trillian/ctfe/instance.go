@@ -24,8 +24,8 @@ import (
 
 	"github.com/google/certificate-transparency-go/x509"
 	"github.com/google/trillian"
-	"github.com/google/trillian/crypto"
 	"github.com/google/trillian/crypto/keys"
+	"github.com/google/trillian/crypto/sigs"
 	"github.com/google/trillian/util"
 )
 
@@ -123,7 +123,7 @@ func (cfg LogConfig) SetUpInstance(client trillian.TrillianLogClient, deadline t
 	if err != nil {
 		return nil, fmt.Errorf("failed to load private key: %v", err)
 	}
-	signer := crypto.NewSHA256Signer(key)
+	signer := sigs.NewSHA256Signer(key)
 
 	var keyUsages []x509.ExtKeyUsage
 	if len(cfg.ExtKeyUsages) > 0 {

@@ -35,7 +35,7 @@ import (
 	"github.com/google/certificate-transparency-go/tls"
 	"github.com/google/certificate-transparency-go/x509"
 	"github.com/google/trillian"
-	"github.com/google/trillian/crypto"
+	"github.com/google/trillian/crypto/sigs"
 	"github.com/google/trillian/util"
 )
 
@@ -170,7 +170,7 @@ type LogContext struct {
 	// rpcClient is the client used to communicate with the trillian backend
 	rpcClient trillian.TrillianLogClient
 	// signer signs objects
-	signer *crypto.Signer
+	signer *sigs.Signer
 	// rpcDeadline is the deadline that will be set on all backend RPC requests
 	rpcDeadline time.Duration
 	// Various per-log statistics
@@ -187,7 +187,7 @@ type LogContext struct {
 }
 
 // NewLogContext creates a new instance of LogContext.
-func NewLogContext(logID int64, prefix string, trustedRoots *PEMCertPool, rejectExpired bool, extKeyUsages []x509.ExtKeyUsage, rpcClient trillian.TrillianLogClient, signer *crypto.Signer, rpcDeadline time.Duration, timeSource util.TimeSource) *LogContext {
+func NewLogContext(logID int64, prefix string, trustedRoots *PEMCertPool, rejectExpired bool, extKeyUsages []x509.ExtKeyUsage, rpcClient trillian.TrillianLogClient, signer *sigs.Signer, rpcDeadline time.Duration, timeSource util.TimeSource) *LogContext {
 	ctx := &LogContext{
 		logID:       logID,
 		urlPrefix:   prefix,
@@ -763,7 +763,7 @@ func extraDataForChain(chain []*x509.Certificate, isPrecert bool) ([]byte, error
 
 // marshalAndWriteAddChainResponse is used by add-chain and add-pre-chain to create and write
 // the JSON response to the client
-func marshalAndWriteAddChainResponse(sct *ct.SignedCertificateTimestamp, signer *crypto.Signer, w http.ResponseWriter) error {
+func marshalAndWriteAddChainResponse(sct *ct.SignedCertificateTimestamp, signer *sigs.Signer, w http.ResponseWriter) error {
 	logID, err := GetCTLogID(signer.Public())
 	if err != nil {
 		return fmt.Errorf("failed to marshal logID: %v", err)
