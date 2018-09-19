@@ -435,7 +435,7 @@ func TestPostAndParseWithRetry(t *testing.T) {
 	}
 }
 
-func TestContextRequired(t *testing.T) {
+func TestContext(t *testing.T) {
 	ts := MockServer(t, -1, 0)
 	defer ts.Close()
 
@@ -443,42 +443,42 @@ func TestContextRequired(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var result TestStruct
-	_, _, err = logClient.GetAndParse(nil, "/struct/path", nil, &result)
-	if err == nil {
-		t.Errorf("GetAndParse() succeeded with empty Context")
-	}
-	_, _, err = logClient.PostAndParse(nil, "/struct/path", nil, &result)
-	if err == nil {
-		t.Errorf("PostAndParse() succeeded with empty Context")
-	}
-	_, _, err = logClient.PostAndParseWithRetry(nil, "/struct/path", nil, &result)
-	if err == nil {
-		t.Errorf("PostAndParseWithRetry() succeeded with empty Context")
-	}
-}
 
-func TestCancelledContext(t *testing.T) {
-	ts := MockServer(t, -1, 0)
-	defer ts.Close()
-	logClient, err := New(ts.URL, &http.Client{}, Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	var result TestStruct
-	_, _, err = logClient.GetAndParse(ctx, "/struct/path", nil, &result)
-	if err != context.Canceled {
-		t.Errorf("GetAndParse() = (_,_,%v), want %q", err, context.Canceled)
-	}
-	_, _, err = logClient.PostAndParse(ctx, "/struct/path", nil, &result)
-	if err != context.Canceled {
-		t.Errorf("PostAndParse() = (_,_,%v), want %q", err, context.Canceled)
-	}
-	_, _, err = logClient.PostAndParseWithRetry(ctx, "/struct/path", nil, &result)
-	if err != context.Canceled {
-		t.Errorf("PostAndParseWithRetry() = (_,_,%v), want %q", err, context.Canceled)
+	for _, test := range []struct {
+		name    string
+		context func() context.Context
+		wantErr error
+	}{
+		{
+			name:    "nil",
+			context: func() context.Context { return nil },
+			wantErr: errCtxRequired,
+		},
+		{
+			name: "canceled",
+			context: func() context.Context {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return ctx
+			},
+			wantErr: context.Canceled,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := test.context()
+			var result TestStruct
+			_, _, err = logClient.GetAndParse(ctx, "/struct/path", nil, &result)
+			if err != test.wantErr {
+				t.Errorf("GetAndParse() = (_,_,%v), want %v", err, test.wantErr)
+			}
+			_, _, err = logClient.PostAndParse(ctx, "/struct/path", nil, &result)
+			if err != test.wantErr {
+				t.Errorf("PostAndParse() = (_,_,%v), want %v", err, test.wantErr)
+			}
+			_, _, err = logClient.PostAndParseWithRetry(ctx, "/struct/path", nil, &result)
+			if err != test.wantErr {
+				t.Errorf("PostAndParseWithRetry() = (_,_,%v), want %v", err, test.wantErr)
+			}
+		})
 	}
 }

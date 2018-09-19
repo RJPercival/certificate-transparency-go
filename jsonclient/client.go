@@ -37,6 +37,8 @@ import (
 
 const maxJitter = 250 * time.Millisecond
 
+var errCtxRequired = errors.New("context.Context required")
+
 type backoffer interface {
 	// set adjusts/increases the current backoff interval (typically on retryable failure);
 	// if the optional parameter is provided, this will be used as the interval if it is greater
@@ -163,7 +165,7 @@ func (c *JSONClient) BaseURI() string {
 // type RspError if the HTTP response was available).
 func (c *JSONClient) GetAndParse(ctx context.Context, path string, params map[string]string, rsp interface{}) (*http.Response, []byte, error) {
 	if ctx == nil {
-		return nil, nil, errors.New("context.Context required")
+		return nil, nil, errCtxRequired
 	}
 	// Build a GET request with URL-encoded parameters.
 	vals := url.Values{}
@@ -205,7 +207,7 @@ func (c *JSONClient) GetAndParse(ctx context.Context, path string, params map[st
 // an error (which may be of type RspError if the HTTP response was available).
 func (c *JSONClient) PostAndParse(ctx context.Context, path string, req, rsp interface{}) (*http.Response, []byte, error) {
 	if ctx == nil {
-		return nil, nil, errors.New("context.Context required")
+		return nil, nil, errCtxRequired
 	}
 	// Build a POST request with JSON body.
 	postBody, err := json.Marshal(req)
@@ -263,7 +265,7 @@ func (c *JSONClient) waitForBackoff(ctx context.Context) error {
 // to prevent infinite retries.  Return values are as for PostAndParse.
 func (c *JSONClient) PostAndParseWithRetry(ctx context.Context, path string, req, rsp interface{}) (*http.Response, []byte, error) {
 	if ctx == nil {
-		return nil, nil, errors.New("context.Context required")
+		return nil, nil, errCtxRequired
 	}
 	for {
 		httpRsp, body, err := c.PostAndParse(ctx, path, req, rsp)
