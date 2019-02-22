@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+// Manually mapped from https://www.gstatic.com/ct/log_list/v2beta/log_list_schema.json
+
+// LogList holds a collection of CT logs, grouped by operator.
+message LogList {
+    // Operators contains a list of CT log operators and the logs they operate.
+    repeated Operator operators = 1;
+}
+
+// Operator holds a collection of CT logs run by the same organisation.
+// It also provides information about that organisation, e.g. contact details.
+message Operator {
+    // Name is the name of the CT log operator.
+    string name = 1;
+    // Email lists the email addresses that can be used to contact this log operator.
+    repeated string email = 2;
+    // Logs is a map of unique names to CT logs run by this operator.
+    repeated Log logs = 3;
+}
+
+// Log describes a single CT log.
+message Log {
+    // Description is a human-readable string that describes the log.
+    string description = 1;
+    // LogID is the SHA-256 hash of the log's public key.
+    bytes log_id = 2;
+    // Key is the public key with which signatures can be verified.
+    bytes key = 3;
+    // URL is the address of the HTTPS API.
+    string url = 4;
+    // DNS is the address of the DNS API.
+    string dns = 5;
+    // MMD is the Maximum Merge Delay, in seconds. All submitted
+    // certificates must be incorporated into the log within this time.
+    int32 mmd = 6;
+    message State {
+        oneof state {
+            // Pending indicates that the log is in the "pending" state.
+            LogState pending = 1;
+            // Qualified indicates that the log is in the "qualified" state.
+            LogState qualified = 2;
+            // Usable indicates that the log is in the "usable" state.
+            LogState usable = 3;
+            // ReadOnly indicates that the log is in the "read-only" state.
+            ReadOnlyLogState readonly = 4;
+            // Retired indicates that the log is in the "retired" state.
+            LogState retired = 5;
+            // Rejected indicates that the log is in the "rejected" state.
+            LogState rejected = 6;
+        }
+    }
+    // State is the current state of the log, from the perspective of the
+    // log list distributor.
+    State state = 7;
+    // TemporalInterval, if set, indicates that this log only accepts
+    // certificates with a NotBefore date in this time range.
+    TemporalInterval temporal_interval = 8;
+    // Type indicates the purpose of this log, e.g. "test" or "prod".
+    string type = 9;
+}
+
+// TemporalInterval is a time range.
+message TemporalInterval {
+    // StartInclusive is the beginning of the time range.
+    string start_inclusive = 1;
+    // EndExclusive is just after the end of the time range.
+    string end_exclusive = 2;
+}
+
+// LogState contains details on the current state of a CT log.
+message LogState {
+    // Timestamp is the time when the state began.
+    string timestamp = 1;
+}
+
+// ReadOnlyLogState contains details on the current state of a read-only CT log.
+message ReadOnlyLogState {
+    // Timestamp is the time when the state began.
+    string timestamp = 1;
+    // FinalTreeHead is the root hash and tree size that the CT log was
+	// made read-only at. This should never change while the log is read-only.
+    TreeHead final_tree_head = 2;
+}
+
+// TreeHead is the root hash and tree size of a CT log.
+message TreeHead {
+    // SHA256RootHash is the root hash of the CT log's Merkle tree.
+    bytes sha256_root_hash = 1;
+    // TreeSize is the size of the CT log's Merkle tree.
+    int64 tree_size = 2;
+}
