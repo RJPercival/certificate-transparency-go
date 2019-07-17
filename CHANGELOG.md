@@ -4,6 +4,10 @@
 
 Not yet released.
 
+## v1.1.0
+
+Published 2018-07-17 16:30:00 +0000 UTC
+
 ### CTFE
 
 The `reject_expired` and `reject_unexpired` configuration fields for the CTFE
